@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+import json
+
 
 app = FastAPI()
 
@@ -27,7 +29,12 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            for client in connect_clients:
-                await client.send_text(data)
+            try:
+                data_json = json.loads(data)
+                for client in connect_clients:
+                    await client.send_text(json.dumps(data_json))
+            except json.JSONDecodeError:
+                for client in connect_clients:
+                    await client.send_text(data)
     except WebSocketDisconnect:
         connect_clients.remove(websocket)
